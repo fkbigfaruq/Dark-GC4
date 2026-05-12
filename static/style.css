@@ -492,10 +492,10 @@ th { background: rgba(0,255,0,0.06); color: var(--primary); text-transform: uppe
   color: var(--muted, #9aa);
   border: 1px dashed var(--border, #333);
   padding: 5px 12px;
-  border-radius: 920px;
+  border-radius: 100px;
   font-size: 12px;
   font-style: italic;
-  max-width: 90%;
+  max-width: 84%;
   text-align: center;
   word-break: break-word;
 }
