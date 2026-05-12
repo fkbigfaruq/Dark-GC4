@@ -12,27 +12,32 @@ def handle_message(username, text):
 
     # ----- simple commands -----
     if msg == "/about":
-        return (
-            "DARK_GC // underground cyber community\\n"
-            "Anonymous global chat for coders, \\nhackers, builders and learners."
-        )
+        return """DARK_GC // underground 
+        cyber community
+        
+        Anonymous global chat for coders,
+        
+        hackers, builders and learners."""
 
         # =========================
     # COMMAND LIST
     # =========================
     elif msg == "/cmd":
-        return (
-            "AVAILABLE COMMANDS:\\n"
-            "/about - info about DARK_GC\\n"
-            "/ping - test bot response\\n"
-            "/time - server time\\n"
-            "/rules - group rules\\n"
-            "/whoami - show your username\\n"
-            "/ip <target> - lookup public ip\\n"
-            "/clear - fake terminal clear"
-        )
+        return """ AVAILABLE COMMANDS:
+        
+        /about - info about DARK_GC
+        
+        /ping - test bot response
+        
+        /time - server time
+        
+        /rules - group rules
+        
+        /whoami - show your username
+        
+        /ip <target> - lookup public ip (e.g /ip google.com)"""
 
-    elif msg == "!time":
+    elif msg == "/time":
         import time
         return f"server time: " + time.strftime("%H:%M:%S")
 
@@ -53,25 +58,18 @@ def handle_message(username, text):
     # RULES
     # =========================
     elif msg == "/rules":
-        return (
-            "DARK_GC RULES:\\n"
-            "1. Respect members\\n"
-            "2. No spam\\n"
-            "3. No scams\\n"
-            "4. Learn ethically\\n"
-            "5. Build cool stuff"
-        )
+        return """DARK_GC RULES
+        
+        1. Respect members and have fun
+        2. No spam
+        3. No scams
+        4. Learn ethically
+        5. Build cool stuff"""
     # =========================
     # WHOAMI
     # =========================
     elif msg == "/whoami":
         return f"You are @{username}"
-
-    # =========================
-    # CLEAR
-    # =========================
-    elif msg == "/clear":
-        return "\\n" * 25 + "terminal cleared"
 
     # =========================
     # IP LOOKUP
