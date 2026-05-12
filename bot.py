@@ -1,14 +1,5 @@
-"""
-DARK_GC bot — beginner friendly.
-
-How it works:
-- Every chat message is passed to `handle_message(username, text)`.
-- If you return a string, the bot replies with that string in the chat.
-- If you return None, the bot stays quiet.
-
-Add your own rules below using simple if-statements.
-You don't need to touch app.py — just edit this file.
-"""
+import time
+import socket
 
 BOT_NAME = "bot"
 
@@ -20,28 +11,81 @@ def handle_message(username, text):
     msg = text.strip().lower()
 
     # ----- simple commands -----
-    if msg == "!ping":
-        return f"pong 🏓"
+    if msg == "/about":
+        return (
+            "DARK_GC // underground cyber community\\n"
+            "Anonymous global chat for coders, \\nhackers, builders and learners."
+        )
 
-    if msg == "!help":
-        return f"commands: !ping, !help, !time, !who"
+        # =========================
+    # COMMAND LIST
+    # =========================
+    elif msg == "/cmd":
+        return (
+            "AVAILABLE COMMANDS:\\n"
+            "/about - info about DARK_GC\\n"
+            "/ping - test bot response\\n"
+            "/time - server time\\n"
+            "/rules - group rules\\n"
+            "/whoami - show your username\\n"
+            "/ip <target> - lookup public ip\\n"
+            "/clear - fake terminal clear"
+        )
 
     if msg == "!time":
         import time
         return f"server time: " + time.strftime("%H:%M:%S")
 
-    if msg == "!who":
-        return f"you are: @{username}"
+    # =========================
+    # PING
+    # =========================
+    elif msg == "/ping":
+        return "PONG // bot online"
 
     # ----- keyword replies -----
-    if "hello" in msg or "hi" in msg:
-        return f"hey @{username} 👋"
+    if "@bot" in msg:
+        return f"yes how may i be of help to you @{username} 👋"
 
     if "bye" in msg:
         return f"later @{username} 👻"
 
-    # add more rules here:
-    # if msg == "!something":
-    #     return "your reply"
+    # =========================
+    # RULES
+    # =========================
+    elif msg == "/rules":
+        return (
+            "DARK_GC RULES:\\n"
+            "1. Respect members\\n"
+            "2. No spam\\n"
+            "3. No scams\\n"
+            "4. Learn ethically\\n"
+            "5. Build cool stuff"
+        )
+    # =========================
+    # WHOAMI
+    # =========================
+    elif msg == "/whoami":
+        return f"You are @{username}"
+
+    # =========================
+    # CLEAR
+    # =========================
+    elif msg == "/clear":
+        return "\\n" * 25 + "terminal cleared"
+
+    # =========================
+    # IP LOOKUP
+    # =========================
+    elif msg.startswith("/ip "):
+
+        target = msg.replace("/ip ", "").strip()
+
+        try:
+            ip = socket.gethostbyname(target)
+
+            return (
+                f"TARGET: {target}\\n"
+                f"IP: {ip}"
+            )
 
     return None  # stay silent
