@@ -32,7 +32,7 @@ def handle_message(username, text):
             "/clear - fake terminal clear"
         )
 
-    if msg == "!time":
+    elif msg == "!time":
         import time
         return f"server time: " + time.strftime("%H:%M:%S")
 
@@ -43,10 +43,10 @@ def handle_message(username, text):
         return "PONG // bot online"
 
     # ----- keyword replies -----
-    if "@bot" in msg:
+    elif "@bot" in msg:
         return f"yes how may i be of help to you @{username} 👋"
 
-    if "bye" in msg:
+    elif "bye" in msg:
         return f"later @{username} 👻"
 
     # =========================
