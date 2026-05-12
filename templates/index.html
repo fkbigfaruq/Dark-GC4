@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DARK_GC // terminal chat</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="center">
+    <div class="hero">
+      <h1 class="title">DARK_GC</h1>
+      <p class="subtitle">// encrypted terminal · realtime socket</p>
+      <p>welcome to the underground. anonymous group chat for the connected.</p>
+      <div class="actions">
+        {% if user %}
+          <a class="btn" href="{{ url_for('chat') }}">enter chat</a>
+          <a class="btn ghost" href="{{ url_for('logout') }}">logout</a>
+        {% else %}
+          <a class="btn" href="{{ url_for('signup') }}">register</a>
+          <a class="btn ghost" href="{{ url_for('login') }}">login</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>

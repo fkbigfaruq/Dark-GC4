@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>admin // DARK_GC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="admin-wrap">
+    <div class="chat-header" style="border:1px solid var(--border)">
+      <div>
+        <div class="brand">DARK_GC // admin</div>
+        <div class="meta">root@dark_gc · {{ user['username'] }}</div>
+      </div>
+      <div class="actions">
+        <a class="icon-btn" href="{{ url_for('chat') }}">back to chat</a>
+        <a class="icon-btn" href="{{ url_for('logout') }}">exit</a>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>id</th><th>username</th><th>status</th><th>actions</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td>{{ u['id'] }}</td>
+            <td>
+              {{ u['username'] }}
+              {% if u['is_admin'] %}<span class="badge admin">admin</span>{% endif %}
+              {% if u['is_banned'] %}<span class="badge banned">banned</span>{% endif %}
+              {% if u['id'] == user['id'] %}<span class="badge">you</span>{% endif %}
+            </td>
+            <td>{{ 'banned' if u['is_banned'] else 'active' }}</td>
+            <td>
+              {% if u['id'] == user['id'] %}
+                <span class="muted">— (you)</span>
+              {% elif u['username'] == 'fkbigfaruq' %}
+                <span class="muted">— (root)</span>
+              {% else %}
+                {% if u['is_banned'] %}
+                  <form method="post" action="{{ url_for('unban', uid=u['id']) }}" style="display:inline">
+                    <button class="ghost">unban</button>
+                  </form>
+                {% else %}
+                  <form method="post" action="{{ url_for('ban', uid=u['id']) }}" style="display:inline">
+                    <button class="danger">ban</button>
+                  </form>
+                {% endif %}
+
+                {% if u['is_admin'] %}
+                  <form method="post" action="{{ url_for('demote', uid=u['id']) }}" style="display:inline">
+                    <button class="danger">remove admin</button>
+                  </form>
+                {% else %}
+                  <form method="post" action="{{ url_for('promote', uid=u['id']) }}" style="display:inline">
+                    <button class="ghost">make admin</button>
+                  </form>
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
