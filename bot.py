@@ -87,5 +87,7 @@ def handle_message(username, text):
                 f"TARGET: {target}\\n"
                 f"IP: {ip}"
             )
+        except:
+            return "invalid domain or ip"
 
     return None  # stay silent
