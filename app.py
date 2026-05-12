@@ -48,7 +48,7 @@ os.makedirs(AVATAR_DIR, exist_ok=True)
 os.makedirs(CHAT_IMG_DIR, exist_ok=True)
 
 # ---------- pick database backend ----------
-DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://neondb_owner:npg_sDgfx0MPVCp9@ep-cold-sunset-app6vk4s.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require").strip()
 USE_PG = bool(DATABASE_URL)
 
 if USE_PG:
