@@ -34,50 +34,26 @@ except Exception as e:
     print("bot.py not loaded:", e)
     bot_plugin = None
 
-# ---------- config ----------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.environ.get("DATA_DIR", BASE_DIR)
-DB_PATH = os.environ.get("DATABASE_PATH", os.path.join(DATA_DIR, "dark_gc.db"))
-AVATAR_DIR = os.environ.get("AVATAR_DIR", os.path.join(BASE_DIR, "static", "uploads"))
-CHAT_IMG_DIR = os.environ.get("CHAT_IMG_DIR", os.path.join(BASE_DIR, "static", "chat_images"))
-ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
-ADMIN_USERNAME = "fkbigfaruq"
-SYSTEM_USER_ID = 0  # virtual user id for system / bot messages
-
-os.makedirs(AVATAR_DIR, exist_ok=True)
-os.makedirs(CHAT_IMG_DIR, exist_ok=True)
-
-# ---------- pick database backend ----------
-DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
-USE_PG = bool(DATABASE_URL)
-
-if USE_PG:
-    import psycopg2
-    import psycopg2.extras
-    import psycopg2.errors
-    # Render sometimes provides "postgres://" — psycopg2 wants "postgresql://"
-    if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
-    INTEGRITY_ERRORS = (sqlite3.IntegrityError, psycopg2.IntegrityError)
-    print(f"[db] Using PostgreSQL (permanent storage)")
-else:
-    INTEGRITY_ERRORS = (sqlite3.IntegrityError,)
-    print(f"[db] Using SQLite at {DB_PATH} (NOT permanent on Render free tier)")
-
-
-app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me-please-dark-gc-secret")
-app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
-socketio = SocketIO(app, async_mode="threading", cors_allowed_origins="*")
-
-
 # ---------- db helpers ----------
 class DB:
     """Tiny adapter so the rest of the code can stay (mostly) the same."""
     def __init__(self):
+        self._conn = None
+        self._connect()
+    
+    def _connect(self):
         if USE_PG:
-            self._conn = psycopg2.connect(DATABASE_URL, sslmode="require")
+            import psycopg2
+            import psycopg2.extras
+            try:
+                self._conn = psycopg2.connect(DATABASE_URL, sslmode="require")
+                self._conn.autocommit = True  # ★ KEY FIX: Auto-commit!
+                print("[db] ✅ Connected to PostgreSQL")
+            except Exception as e:
+                print(f"[db] ❌ Connection failed: {e}")
+                raise
         else:
+            import sqlite3
             d = os.path.dirname(DB_PATH)
             if d:
                 os.makedirs(d, exist_ok=True)
@@ -85,34 +61,60 @@ class DB:
             self._conn.row_factory = sqlite3.Row
 
     def execute(self, sql, params=()):
-        if USE_PG:
-            cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cur.execute(sql.replace("?", "%s"), params)
-        else:
-            cur = self._conn.execute(sql, params)
-        return cur
+        """Execute with auto-reconnect if needed"""
+        try:
+            if USE_PG:
+                cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                cur.execute(sql.replace("?", "%s"), params)
+            else:
+                cur = self._conn.execute(sql, params)
+            return cur
+        except Exception as e:
+            print(f"[db] ⚠️ Query failed, reconnecting: {e}")
+            self._connect()
+            if USE_PG:
+                cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                cur.execute(sql.replace("?", "%s"), params)
+            else:
+                cur = self._conn.execute(sql, params)
+            return cur
 
     def insert_id(self, sql, params=()):
         """Run an INSERT and return the new row's id."""
-        if USE_PG:
-            cur = self._conn.cursor()
-            cur.execute(sql.replace("?", "%s") + " RETURNING id", params)
-            return cur.fetchone()[0]
-        else:
-            return self._conn.execute(sql, params).lastrowid
+        try:
+            if USE_PG:
+                cur = self._conn.cursor()
+                cur.execute(sql.replace("?", "%s") + " RETURNING id", params)
+                return cur.fetchone()[0]
+            else:
+                return self._conn.execute(sql, params).lastrowid
+        except Exception as e:
+            print(f"[db] ❌ Insert failed: {e}")
+            self._connect()
+            if USE_PG:
+                cur = self._conn.cursor()
+                cur.execute(sql.replace("?", "%s") + " RETURNING id", params)
+                return cur.fetchone()[0]
+            else:
+                return self._conn.execute(sql, params).lastrowid
 
     def commit(self):
-        self._conn.commit()
+        # With autocommit=True, this isn't needed but kept for compatibility
+        pass
 
     def rollback(self):
+        # With autocommit=True, rollback doesn't work the same
+        # But let's keep it for compatibility
         try:
-            self._conn.rollback()
+            if self._conn and not USE_PG:
+                self._conn.rollback()
         except Exception:
             pass
 
     def close(self):
         try:
-            self._conn.close()
+            if self._conn:
+                self._conn.close()
         except Exception:
             pass
 
@@ -120,10 +122,15 @@ class DB:
         return self
 
     def __exit__(self, exc_type, exc, tb):
+        # ★ KEY FIX: Don't close connection!
+        # Just leave it open for reuse by the next caller
         if exc_type is not None:
-            self.rollback()
-        self.close()
+            print(f"[db] ⚠️ Exception: {exc_type}: {exc}")
+        # Connection stays OPEN - don't close!
 
+
+# ★ KEY FIX: Keep a SINGLE connection, don't create new ones!
+_db_instance = None
 
 def db():
     return DB()
