@@ -36,32 +36,68 @@ except Exception as e:
 
 # ---------- db helpers ----------
 class DB:
-    """Tiny adapter so the rest of the code can stay (mostly) the same."""
+    """Tiny adapter with auto-reconnect for Render/Neon"""
     def __init__(self):
         self._conn = None
         self._connect()
     
     def _connect(self):
-        if USE_PG:
-            import psycopg2
-            import psycopg2.extras
+        """Connect with retry for Neon's cold start"""
+        import time
+        max_retries = 3
+        
+        for attempt in range(max_retries):
             try:
-                self._conn = psycopg2.connect(DATABASE_URL, sslmode="require")
-                self._conn.autocommit = True  # ★ KEY FIX: Auto-commit!
-                print("[db] ✅ Connected to PostgreSQL")
+                if USE_PG:
+                    import psycopg2
+                    import psycopg2.extras
+                    self._conn = psycopg2.connect(
+                        DATABASE_URL, 
+                        sslmode="require",
+                        connect_timeout=10
+                    )
+                    self._conn.autocommit = True  # ★ CRITICAL FIX
+                    print(f"[db] ✅ PostgreSQL connected (attempt {attempt+1})")
+                    return
+                else:
+                    import sqlite3
+                    d = os.path.dirname(DB_PATH)
+                    if d:
+                        os.makedirs(d, exist_ok=True)
+                    self._conn = sqlite3.connect(DB_PATH)
+                    self._conn.row_factory = sqlite3.Row
+                    print(f"[db] ✅ SQLite connected")
+                    return
             except Exception as e:
-                print(f"[db] ❌ Connection failed: {e}")
-                raise
-        else:
-            import sqlite3
-            d = os.path.dirname(DB_PATH)
-            if d:
-                os.makedirs(d, exist_ok=True)
-            self._conn = sqlite3.connect(DB_PATH)
-            self._conn.row_factory = sqlite3.Row
+                print(f"[db] ❌ Connection attempt {attempt+1} failed: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(2)  # Wait before retry
+                else:
+                    print(f"[db] ❌ All connection attempts failed!")
+                    raise
+
+    def _ensure_connected(self):
+        """Check if connection is alive, reconnect if dead"""
+        if self._conn is None:
+            self._connect()
+            return
+        
+        if USE_PG:
+            try:
+                # Test connection
+                self._conn.cursor().execute("SELECT 1")
+            except Exception as e:
+                print(f"[db] ⚠️ Connection lost, reconnecting...")
+                try:
+                    self._conn.close()
+                except:
+                    pass
+                self._conn = None
+                self._connect()
 
     def execute(self, sql, params=()):
-        """Execute with auto-reconnect if needed"""
+        """Execute with auto-reconnect"""
+        self._ensure_connected()
         try:
             if USE_PG:
                 cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -70,8 +106,9 @@ class DB:
                 cur = self._conn.execute(sql, params)
             return cur
         except Exception as e:
-            print(f"[db] ⚠️ Query failed, reconnecting: {e}")
-            self._connect()
+            print(f"[db] ⚠️ Query failed: {e}")
+            # Try one more time with fresh connection
+            self._ensure_connected()
             if USE_PG:
                 cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
                 cur.execute(sql.replace("?", "%s"), params)
@@ -80,7 +117,8 @@ class DB:
             return cur
 
     def insert_id(self, sql, params=()):
-        """Run an INSERT and return the new row's id."""
+        """Insert and return ID"""
+        self._ensure_connected()
         try:
             if USE_PG:
                 cur = self._conn.cursor()
@@ -90,7 +128,8 @@ class DB:
                 return self._conn.execute(sql, params).lastrowid
         except Exception as e:
             print(f"[db] ❌ Insert failed: {e}")
-            self._connect()
+            # Retry with fresh connection
+            self._ensure_connected()
             if USE_PG:
                 cur = self._conn.cursor()
                 cur.execute(sql.replace("?", "%s") + " RETURNING id", params)
@@ -99,12 +138,15 @@ class DB:
                 return self._conn.execute(sql, params).lastrowid
 
     def commit(self):
-        # With autocommit=True, this isn't needed but kept for compatibility
-        pass
+        # With autocommit=True, this is automatic
+        if self._conn and not USE_PG:
+            try:
+                self._conn.commit()
+            except:
+                pass
+        return True
 
     def rollback(self):
-        # With autocommit=True, rollback doesn't work the same
-        # But let's keep it for compatibility
         try:
             if self._conn and not USE_PG:
                 self._conn.rollback()
@@ -115,11 +157,13 @@ class DB:
         try:
             if self._conn:
                 self._conn.close()
+                self._conn = None
         except Exception:
             pass
 
     def __enter__(self):
         return self
+
 
     def __exit__(self, exc_type, exc, tb):
         # ★ KEY FIX: Don't close connection!
