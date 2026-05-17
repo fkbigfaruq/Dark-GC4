@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dms // DARK_GC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div>
+        <div class="brand">DARK_GC</div>
+        <div class="meta">inbox · {{ user['username'] }}</div>
+      </div>
+      <div class="actions">
+        <a class="icon-btn" href="{{ url_for('rooms') }}">rooms</a>
+        <a class="icon-btn" href="{{ url_for('logout') }}">exit</a>
+      </div>
+    </div>
+    <div class="rooms-list">
+      {% if threads|length == 0 %}
+        <div class="room-desc" style="padding:24px;text-align:center">no conversations yet.</div>
+      {% endif %}
+      {% for t in threads %}
+        <a class="room-card" style="text-decoration:none;color:inherit" href="{{ url_for('messages_with', username=t['username']) }}">
+          <div class="room-info">
+            <div class="room-name">@{{ t['username'] }}</div>
+          </div>
+          <div class="room-actions"><span class="btn-ghost">open</span></div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>

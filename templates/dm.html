@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dm @{{ other['username'] }} // DARK_GC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div>
+        <div class="brand">DARK_GC</div>
+        <div class="meta">dm · @{{ other['username'] }}</div>
+      </div>
+      <div class="actions">
+        <a class="icon-btn" href="{{ url_for('messages_inbox') }}">inbox</a>
+        <a class="icon-btn" href="{{ url_for('rooms') }}">rooms</a>
+      </div>
+    </div>
+
+    <div id="messages" class="messages">
+      {% for m in msgs %}
+        {% set isme = m['from_user_id'] == user['id'] %}
+        <div class="msg{% if isme %} me{% endif %}">
+          <div class="body">
+            <div class="name">&gt; {{ 'you' if isme else '@'+m['from_name'] }}</div>
+            <div class="bubble">{{ m['content'] }}</div>
+            <div class="time" data-ts="{{ m['created_at'] }}"></div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="composer-wrap composer-area">
+      <form class="composer" method="post">
+        <input type="text" name="content" placeholder="&gt; message @{{ other['username'] }}…" maxlength="2000" autocomplete="off" required>
+        <button type="submit">send</button>
+      </form>
+    </div>
+  </div>
+<script>
+  function fmt(ts){const d=new Date(ts*1000);return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+  document.querySelectorAll('.time[data-ts]').forEach(e=>e.textContent=fmt(parseFloat(e.dataset.ts)));
+  const m=document.getElementById('messages'); m.scrollTop=m.scrollHeight;
+</script>
+</body>
+</html>

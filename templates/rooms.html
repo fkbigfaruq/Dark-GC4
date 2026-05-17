@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rooms // DARK_GC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div>
+        <div class="brand">DARK_GC</div>
+        <div class="meta">rooms · {{ user['username'] }}</div>
+      </div>
+      <div class="actions">
+        <a class="icon-btn" href="{{ url_for('messages_inbox') }}">dms</a>
+        {% if user['is_admin'] %}
+          <a class="icon-btn" href="{{ url_for('admin') }}">admin</a>
+        {% endif %}
+        <a class="icon-btn" href="{{ url_for('logout') }}">exit</a>
+      </div>
+    </div>
+
+    <div class="rooms-list">
+      {% for r in rooms %}
+        <div class="room-card">
+          <div class="room-info">
+            <div class="room-name">
+              {% if r.is_locked %}🔒{% else %}#{% endif %} {{ r.name }}
+              {% if r.status == 'pending' %}<span class="badge pending">pending</span>{% endif %}
+              {% if r.status == 'denied' %}<span class="badge denied">denied</span>{% endif %}
+              {% if r.status == 'approved' and r.is_locked %}<span class="badge ok">approved</span>{% endif %}
+            </div>
+            <div class="room-desc">{{ r.description or '' }}</div>
+          </div>
+          <div class="room-actions">
+            {% if r.status == 'approved' %}
+              <a class="btn-primary" href="{{ url_for('chat', slug=r.slug) }}">enter</a>
+            {% elif r.status == 'pending' %}
+              <button class="btn-ghost" disabled>waiting…</button>
+            {% else %}
+              <button class="btn-primary" onclick="openReq({{ r.id }}, '{{ r.name|e }}')">request</button>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div id="req-modal" class="modal-bg" onclick="if(event.target===this)closeReq()">
+    <div class="modal-box">
+      <div class="modal-title">Request access — <span id="req-room"></span></div>
+      <p class="modal-sub">Send a short message to the admin. He will reply in DMs and approve you when ready.</p>
+      <form id="req-form" method="post">
+        <textarea name="message" placeholder="hi admin, I'd like to join…" maxlength="1000" required></textarea>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" onclick="closeReq()">cancel</button>
+          <button type="submit" class="btn-primary">send</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script>
+  function openReq(id, name) {
+    document.getElementById('req-room').textContent = name;
+    document.getElementById('req-form').action = '/rooms/' + id + '/request';
+    document.getElementById('req-modal').classList.add('show');
+  }
+  function closeReq() {
+    document.getElementById('req-modal').classList.remove('show');
+  }
+</script>
+</body>
+</html>

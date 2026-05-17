@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>admin // DARK_GC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div>
+        <div class="brand">DARK_GC</div>
+        <div class="meta">admin panel</div>
+      </div>
+      <div class="actions">
+        <a class="icon-btn" href="{{ url_for('rooms') }}">rooms</a>
+        <a class="icon-btn" href="{{ url_for('messages_inbox') }}">dms</a>
+        <a class="icon-btn" href="{{ url_for('logout') }}">exit</a>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>Pending access requests ({{ pending|length }})</h3>
+      {% if pending|length == 0 %}
+        <div class="room-desc">No pending requests.</div>
+      {% endif %}
+      {% for p in pending %}
+        <div class="room-card">
+          <div class="room-info">
+            <div class="room-name">@{{ p['username'] }} → {{ p['room_name'] }}</div>
+            <div class="room-desc"><a href="{{ url_for('messages_with', username=p['username']) }}">read message</a></div>
+          </div>
+          <div class="room-actions">
+            <form method="post" action="{{ url_for('admin_approve', access_id=p['id']) }}" style="display:inline">
+              <button class="btn-primary">approve</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_deny', access_id=p['id']) }}" style="display:inline">
+              <button class="btn-ghost">deny</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="admin-section">
+      <h3>Rooms</h3>
+      <form method="post" action="{{ url_for('admin_add_room') }}" class="add-room">
+        <input name="name" placeholder="room name" maxlength="60" required>
+        <input name="description" placeholder="description (optional)" maxlength="200">
+        <label class="lock-toggle"><input type="checkbox" name="is_locked" value="1"> locked</label>
+        <button class="btn-primary" type="submit">add room</button>
+      </form>
+      {% for r in rooms %}
+        <div class="room-card">
+          <div class="room-info">
+            <div class="room-name">{% if r['is_locked'] %}🔒{% else %}#{% endif %} {{ r['name'] }} <span class="badge">/{{ r['slug'] }}</span></div>
+            <div class="room-desc">{{ r['description'] or '' }}</div>
+          </div>
+          <div class="room-actions">
+            <a class="btn-ghost" href="{{ url_for('chat', slug=r['slug']) }}">open</a>
+            {% if r['id'] != 1 %}
+            <form method="post" action="{{ url_for('admin_delete_room', room_id=r['id']) }}" style="display:inline"
+                  onsubmit="return confirm('Delete room {{ r['name']|e }} and all its messages?')">
+              <button class="btn-danger">delete</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="admin-section">
+      <h3>Users ({{ users|length }})</h3>
+      {% for u in users %}
+        <div class="room-card">
+          <div class="room-info">
+            <div class="room-name">@{{ u['username'] }}
+              {% if u['is_admin'] %}<span class="badge ok">admin</span>{% endif %}
+              {% if u['is_banned'] %}<span class="badge denied">banned</span>{% endif %}
+            </div>
+          </div>
+          <div class="room-actions">
+            {% if u['is_banned'] %}
+              <form method="post" action="{{ url_for('unban', uid=u['id']) }}" style="display:inline">
+                <button class="btn-primary">unban</button>
+              </form>
+            {% else %}
+              <form method="post" action="{{ url_for('ban', uid=u['id']) }}" style="display:inline">
+                <button class="btn-danger">ban</button>
+              </form>
+            {% endif %}
+            {% if u['is_admin'] %}
+              <form method="post" action="{{ url_for('demote', uid=u['id']) }}" style="display:inline">
+                <button class="btn-ghost">demote</button>
+              </form>
+            {% else %}
+              <form method="post" action="{{ url_for('promote', uid=u['id']) }}" style="display:inline">
+                <button class="btn-ghost">promote</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>
