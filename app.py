@@ -28,6 +28,8 @@ from flask import (
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, emit, join_room, leave_room
+from bot import maybe_bot_reply
+import time, json
 
 try:
     import bot as bot_plugin
@@ -80,7 +82,48 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me-please-dark-g
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
 socketio = SocketIO(app, async_mode="threading", cors_allowed_origins="*")
 
+@app.context_processor
+def inject_dgc_globals():
+    return {
+        "ADMIN_USERS": ["admin"],   # add more admin usernames here if you have them
+        "BOT_NAME": __import__('os').getenv('BOT_NAME', 'DarkBot'),
+    }
+# in-memory negotiation state per user (swap for db column if you want persistence)
+BOT_STATE = {}
+ADMIN_LAST_SEEN = {"ts": 0.0}   # update this whenever the admin sends ANY message
 
+def on_admin_message(...):
+    ADMIN_LAST_SEEN["ts"] = time.time()
+    ...
+
+@socketio.on('dm_send')   # or your existing route
+def handle_dm(data):
+    user = data['from']; to = data['to']; text = data['text']
+    room_name = data.get('room_name', '')
+    save_dm(user, to, text)                       # your existing save
+    socketio.emit('dm', {'from': user, 'text': text}, room=to)
+
+    # If the message is addressed to the admin → maybe let the bot reply
+    if to == 'admin':
+        reply, new_state = maybe_bot_reply(
+            user_msg=text,
+            room_name=room_name,
+            admin_last_seen_ts=ADMIN_LAST_SEEN["ts"],
+            session_state=BOT_STATE.get(user, {}),
+        )
+        BOT_STATE[user] = new_state
+        if reply:
+            save_dm('admin', user, reply, is_bot=True)   # mark as bot so UI styles it
+            socketio.emit('dm', {'from': 'admin', 'text': reply, 'bot': True}, room=user)
+
+@app.get('/bot/status')
+def bot_status():
+    import os
+    return {
+        "enabled": os.getenv("BOT_ENABLED", "1") == "1",
+        "name":    os.getenv("BOT_NAME", "DarkBot"),
+        "idle_threshold_seconds": int(os.getenv("ADMIN_IDLE_SECONDS", "120")),
+    }
 # ---------- db helpers ----------
 class DB:
     def __init__(self):
