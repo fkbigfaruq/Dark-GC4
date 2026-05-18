@@ -1,0 +1,78 @@
+/* DARK GC — extras: cooler bot bubble, admin name color, status pill, toast */
+
+/* connection status pill (top-right) */
+.dgc-status{
+  position:fixed; top:10px; right:10px; z-index:9999;
+  padding:6px 12px; border-radius:999px;
+  font:600 12px/1 ui-monospace,Menlo,Consolas,monospace;
+  letter-spacing:.4px; color:#fff;
+  backdrop-filter: blur(6px);
+  transition: all .25s ease;
+}
+.dgc-status.online { background:rgba(0,200,120,.85); box-shadow:0 0 12px rgba(0,255,150,.55); }
+.dgc-status.offline{ background:rgba(220,40,40,.9);  box-shadow:0 0 12px rgba(255,60,60,.6); }
+.dgc-status .dot{
+  display:inline-block; width:8px; height:8px; border-radius:50%;
+  background:#fff; margin-right:6px; vertical-align:middle;
+  animation:dgcPulse 1.4s infinite;
+}
+@keyframes dgcPulse { 0%{opacity:1} 50%{opacity:.35} 100%{opacity:1} }
+
+/* toast notifications */
+.dgc-toast-wrap{ position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+  display:flex; flex-direction:column; gap:8px; z-index:9999; pointer-events:none; }
+.dgc-toast{
+  background:linear-gradient(135deg,#111,#1c1c1c);
+  color:#e8ffe8; border:1px solid #00ff8855;
+  padding:10px 14px; border-radius:12px; min-width:220px; max-width:80vw;
+  box-shadow:0 8px 24px rgba(0,0,0,.5), 0 0 18px rgba(0,255,136,.15);
+  font:500 13px/1.35 system-ui,sans-serif;
+  animation:dgcIn .25s ease-out;
+}
+@keyframes dgcIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;} }
+
+/* cooler bot bubble */
+.msg.bot{
+  align-self:flex-start;
+  background:linear-gradient(135deg,#0f1f17 0%,#0a2a1c 60%,#0d3a26 100%);
+  border:1px solid #00ff8866;
+  color:#d6ffe6;
+  padding:10px 14px; border-radius:14px 14px 14px 4px;
+  box-shadow:0 0 0 1px rgba(0,255,136,.08), 0 6px 18px rgba(0,255,136,.18);
+  position:relative; max-width:80%;
+  font-family: ui-monospace,Menlo,Consolas,monospace;
+}
+.msg.bot::before{
+  content:"🤖 " attr(data-bot);
+  display:block;
+  font:700 11px/1 ui-monospace,Menlo,Consolas,monospace;
+  color:#00ff88; letter-spacing:.6px; text-transform:uppercase;
+  margin-bottom:4px;
+  text-shadow:0 0 6px rgba(0,255,136,.6);
+}
+.msg.bot::after{
+  content:""; position:absolute; inset:-1px; border-radius:inherit;
+  background:linear-gradient(120deg, transparent 30%, rgba(0,255,136,.18) 50%, transparent 70%);
+  background-size:200% 100%; animation:dgcShine 3.2s linear infinite;
+  pointer-events:none; mix-blend-mode:screen;
+}
+@keyframes dgcShine { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+
+/* admin username — distinct color + crown */
+.username.admin, .msg .username.admin, .msg.admin .username{
+  color:#ff3b6b !important;
+  text-shadow:0 0 6px rgba(255,59,107,.55);
+  font-weight:800;
+}
+.username.admin::before, .msg.admin .username::before{
+  content:"👑 ";
+}
+
+/* enable notification button */
+.dgc-enable-notif{
+  position:fixed; bottom:14px; right:14px; z-index:9999;
+  background:#00ff88; color:#001b10; border:none; padding:8px 12px;
+  border-radius:10px; font:700 12px system-ui; cursor:pointer;
+  box-shadow:0 6px 14px rgba(0,255,136,.4);
+}
+.dgc-enable-notif.hidden{ display:none; }
