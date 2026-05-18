@@ -92,9 +92,9 @@ def inject_dgc_globals():
 BOT_STATE = {}
 ADMIN_LAST_SEEN = {"ts": 0.0}   # update this whenever the admin sends ANY message
 
-def on_admin_message(...):
+def on_admin_message():
     ADMIN_LAST_SEEN["ts"] = time.time()
-    ...
+  
 
 @socketio.on('dm_send')   # or your existing route
 def handle_dm(data):
