@@ -1,0 +1,5 @@
+Flask==3.0.3
+Flask-SocketIO==5.3.6
+simple-websocket==1.1.0
+Werkzeug==3.0.3
+psycopg2-binary==2.9.9
