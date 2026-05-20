@@ -1,7 +1,7 @@
 {
-  "name": "Dark GHC",
-  "short_name": "Dark GHC",
-  "description": "Dark GHC rooms and direct messages",
+  "name": "Dark GC",
+  "short_name": "Dark GC",
+  "description": "Dark GC rooms and direct messages by FK BIG FARUQ",
   "start_url": "/rooms",
   "scope": "/",
   "display": "standalone",
