@@ -11,11 +11,11 @@
   <div class="center">
     <div class="hero">
       <h1 class="title">DARK_GC</h1>
-      <p class="subtitle">// encrypted terminal · realtime socket</p>
+      <p class="subtitle">// encrypted terminal · realtime socket Creatd by FK BIG FARUQ</p>
       <p>welcome to the underground. anonymous group chat for the connected.</p>
       <div class="actions">
         {% if user %}
-          <a class="btn" href="{{ url_for('chat') }}">enter chat</a>
+          <a class="btn" href="{{ url_for('chat', slug='main') }}">enter chat</a>
           <a class="btn ghost" href="{{ url_for('logout') }}">logout</a>
         {% else %}
           <a class="btn" href="{{ url_for('signup') }}">register</a>
