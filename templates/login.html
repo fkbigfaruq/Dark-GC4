@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>login // DARK_GC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="center">
+    <form class="card" method="post">
+      <div class="title">DARK_GC</div>
+      <div class="subtitle">// authenticate</div>
+      {% if error %}<div class="error">&gt; {{ error }}</div>{% endif %}
+      <label>username</label>
+      <input type="text" name="username" required autocomplete="off">
+      <label>password</label>
+      <input type="password" name="password" required>
+      <button type="submit" style="width:100%">login</button>
+      <div class="link-row muted">no account? <a href="{{ url_for('signup') }}">register</a></div>
+    </form>
+  </div>
+</body>
+</html>
