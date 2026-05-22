@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dm @{{ other['username'] }} // DARK_GC</title>
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div>
+        <div class="brand">DARK_GC</div>
+        <div class="meta">dm · @{{ other['username'] }}</div>
+      </div>
+      <div class="actions">
+        <a class="icon-btn" href="{{ url_for('messages_inbox') }}">inbox</a>
+        <a class="icon-btn" href="{{ url_for('rooms') }}">rooms</a>
+      </div>
+    </div>
+
+    <div id="messages" class="messages">
+      {% for m in msgs %}
+        {% set isme = m['from_user_id'] == user['id'] %}
+        <div class="msg{% if isme %} me{% endif %}{% if m.get('is_bot') %} dm-bot{% endif %}">
+          <div class="body">
+            <div class="name{% if m.get('from_is_admin') %} admin-name{% endif %}">&gt; {{ 'you' if isme else '@'+m['from_name'] }}{% if m.get('is_bot') %} · bot{% endif %}</div>
+            <div class="bubble">{{ m['content'] }}</div>
+            <div class="time" data-ts="{{ m['created_at'] }}"></div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div id="typing-bar" class="typing-bar"></div>
+
+    <div class="composer-wrap composer-area">
+      <form class="composer" method="post">
+        <input id="dm-input" type="text" name="content" placeholder="&gt; message @{{ other['username'] }}…" maxlength="2000" autocomplete="off" required>
+        <button type="submit">send</button>
+      </form>
+    </div>
+  </div>
+<script>
+  const ME_ID = {{ user['id'] }};
+  const OTHER_ID = {{ other['id'] }};
+  const OTHER_NAME = {{ other['username']|tojson }};
+  function fmt(ts){const d=new Date(ts*1000);return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+  document.querySelectorAll('.time[data-ts]').forEach(e=>e.textContent=fmt(parseFloat(e.dataset.ts)));
+
+  function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  document.querySelectorAll('.bubble').forEach(b => {
+    const t = b.textContent;
+    b.innerHTML = escapeHtml(t).replace(/(https?:\/\/[^\s<]+)/g,
+      u => `<a href="${u}" target="_blank" rel="noopener noreferrer" class="msg-link">${u}</a>`);
+  });
+  const m=document.getElementById('messages'); m.scrollTop=m.scrollHeight;
+
+  // typing indicator (DM)
+  const socket = io();
+  const input = document.getElementById('dm-input');
+  const typingBar = document.getElementById('typing-bar');
+  let lastSent = 0, stopTimer = null;
+  function sendTyping(state){ socket.emit('typing', { to_user_id: OTHER_ID, typing: state }); }
+  input && input.addEventListener('input', () => {
+    const now = Date.now();
+    if (now - lastSent > 1500) { sendTyping(true); lastSent = now; }
+    clearTimeout(stopTimer);
+    stopTimer = setTimeout(() => { sendTyping(false); lastSent = 0; }, 2500);
+  });
+  let hideTimer = null;
+  socket.on('typing', (d) => {
+    if (!d || d.user_id !== OTHER_ID) return;
+    if (d.typing) {
+      typingBar.textContent = `${OTHER_NAME} is typing…`;
+      typingBar.classList.add('show');
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => typingBar.classList.remove('show'), 4000);
+    } else {
+      typingBar.classList.remove('show');
+    }
+  });
+</script>
+<script src="{{ url_for('static', filename='darkgc-notifications.js') }}"></script>
+</body>
+</html>
