@@ -43,7 +43,7 @@ except Exception as _e:
     WEBPUSH_OK = False
 
 # Auto-delete: keep messages only this many seconds (24h)
-MESSAGE_TTL_SECONDS = int(os.environ.get("MESSAGE_TTL_SECONDS", 24 * 60 * 60))
+MESSAGE_TTL_SECONDS = int(os.environ.get("MESSAGE_TTL_SECONDS", 5 * 60 * 60))
 CLEANUP_INTERVAL_SECONDS = int(os.environ.get("CLEANUP_INTERVAL_SECONDS", 60 * 60))  # hourly
 VAPID_SUBJECT = os.environ.get("VAPID_SUBJECT", "mailto:admin@darkghc.app")
 
