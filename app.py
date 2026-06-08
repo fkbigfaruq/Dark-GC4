@@ -738,10 +738,14 @@ def signup():
         password = request.form.get("password", "")
         if not username or not password:
             error = "Username and password required"
-        elif len(username) < 3:
+        elif len(username) < 4:
             error = "Username too short (min 3)"
-        elif len(password) < 4:
+        elif len(password) < 6:
             error = "Password too short (min 4)"
+        elif len(username) > 6:
+            error = "please your username should not exit 6 chars"
+        elif len(password) > 15:
+            error = "🛑 your password should not exit 15 chars"
         else:
             try:
                 with db() as conn:
