@@ -17,7 +17,7 @@ BOT_MIN_PERCENT = int(os.getenv("BOT_MIN_PERCENT", "100"))
 BOT_CURRENCY = os.getenv("BOT_CURRENCY", "₦")
 BOT_PAYMENT_INFO = os.getenv(
     "BOT_PAYMENT_INFO",
-    "Please send payment proof to the admin here. The admin will approve your room access after confirmation."
+    "Please send payment proof to the admin here. The admin will approve your room access after confirmation. This is the Nira Acount details Number: 9137195754. Acount: Opay. Name: Umar Faruq Musa. and also in USD send via Phantom: resive_ID => F6MCggReRAN6rtrhJ2jRgHLVJtVknN3RAouPurHYSFwY"
 )
 
 try:
@@ -58,14 +58,16 @@ def handle_message(username, text):
     if not text:
         return None
     msg = text.strip().lower()
-    if msg == "!ping":
-        return "pong 🏓"
-    if msg == "!help":
-        return "commands: !ping, !help, !time, !who"
-    if msg == "!time":
+    if msg == "/hey":
+        return f"hello {username} ho may i be of help."
+    if msg == "/help":
+        return "commands:/help, /time, /who"
+    if msg == "/time":
         return "server time: " + time.strftime("%H:%M:%S")
-    if msg == "!who":
+    if msg == "/who":
         return f"you are: @{username}"
+    if username != 'fkbigfaruq' and msg.startwith('https://'):
+        return f"Sorry @{username} please you ae not allowed to send link here only admin's can"
     return None
 
 
@@ -89,7 +91,7 @@ def maybe_bot_reply(user_msg, room_name, admin_last_seen_ts, session_state):
         state["greeted"] = True
         state["last_quote"] = list_price
         return (
-            f"Hey 👋 I'm {BOT_NAME}, the admin assistant. Access for {room_name or 'this room'} is "
+            f"Hey 👋 I'm {BOT_NAME}, the admin assistant. Access for {room_name or 'this room'} is the Nira Acount details Number: 9137195754. Acount: Opay. Name: Umar Faruq Musa. and also in USD send via Phantom: resive_ID => [ F6MCggReRAN6rtrhJ2jRgHLVJtVknN3RAouPurHYSFwY ]. Price in USD is 10$/20$"
             f"{_money(list_price)}. You can ask payment questions here.",
             state,
         )
@@ -122,6 +124,6 @@ def maybe_bot_reply(user_msg, room_name, admin_last_seen_ts, session_state):
     if not state.get("fallback_sent"):
         state["fallback_sent"] = True
         state["last_quote"] = list_price
-        return f"Admin is offline right now. I can help with access. The room price is {_money(list_price)}.", state
+        return f"Admin is not active right now right now. I can help with access. The room price is {_money(list_price)}. This is the Nira Acount details Number: 9137195754. Acount: Opay. Name: Umar Faruq Musa. and also in USD send via Phantom: resive_ID => [ F6MCggReRAN6rtrhJ2jRgHLVJtVknN3RAouPurHYSFwY ]. Price in USD is 10$/20$", state
 
     return None, state
