@@ -770,8 +770,12 @@ th { background: rgba(0,255,0,0.06); color: var(--primary); text-transform: uppe
   border-radius: 10px;
   margin: 10px;
   background: #04100a;
-  overflow: hidden;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.admin-panel::-webkit-scrollbar{ display: none;}
+
 .admin-panel > summary {
   list-style: none;
   cursor: pointer;
