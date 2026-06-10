@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dm @{{ other['username'] }} // DARK_GC</title>
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div>
+        <div class="brand">DARK_GC</div>
+        <div class="meta">dm · @{{ other['username'] }}</div>
+      </div>
+      <div class="actions">
+        <a class="icon-btn" href="{{ url_for('messages_inbox') }}">inbox</a>
+        <a class="icon-btn" href="{{ url_for('rooms') }}">rooms</a>
+      </div>
+    </div>
+
+    <div id="messages" class="messages">
+      {% for m in msgs %}
+        {% set isme = m['from_user_id'] == user['id'] %}
+        <div class="msg{% if isme %} me{% endif %}{% if m['is_bot'] %} dm-bot{% endif %}">
+          <div class="body">
+            <div class="name{% if m['from_is_admin'] %} admin-name{% endif %}">&gt; {{ 'you' if isme else '@'+m['from_name'] }}{% if m['is_bot'] %} · bot{% endif %}</div>
+            <div class="bubble">
+              {% if m['content'] %}{{ m['content'] }}{% endif %}
+              {% if m['image'] %}<img class="chat-img" src="{{ m['image'] }}" alt="attachment">{% endif %}
+            </div>
+            <div class="time" data-ts="{{ m['created_at'] }}"></div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="composer-wrap composer-area">
+      <div id="dm-image-preview" class="image-preview">
+        <img id="dm-image-preview-img" src="" alt="receipt">
+        <button type="button" onclick="dmCancelImage()">×</button>
+      </div>
+      <form class="composer" method="post" enctype="multipart/form-data" id="dm-form">
+        <label class="icon-btn" title="attach receipt / image" style="cursor:pointer">
+          📎
+          <input type="file" name="image" id="dm-image-input" accept="image/*" onchange="dmPreviewImage()" style="display:none">
+        </label>
+        <input type="text" name="content" placeholder="&gt; message @{{ other['username'] }}…" maxlength="2000" autocomplete="off">
+        <button type="submit">send</button>
+      </form>
+    </div>
+  </div>
+<script>
+  function fmt(ts){const d=new Date(ts*1000);return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+  document.querySelectorAll('.time[data-ts]').forEach(e=>e.textContent=fmt(parseFloat(e.dataset.ts)));
+  const m=document.getElementById('messages'); m.scrollTop=m.scrollHeight;
+
+  function dmPreviewImage(){
+    const inp = document.getElementById('dm-image-input');
+    const f = inp.files && inp.files[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    document.getElementById('dm-image-preview-img').src = url;
+    document.getElementById('dm-image-preview').classList.add('show');
+  }
+  function dmCancelImage(){
+    document.getElementById('dm-image-input').value = '';
+    document.getElementById('dm-image-preview').classList.remove('show');
+  }
+  // allow submit when only an image is attached
+  document.getElementById('dm-form').addEventListener('submit', (e)=>{
+    const content = e.target.querySelector('[name=content]').value.trim();
+    const file = document.getElementById('dm-image-input').files[0];
+    if (!content && !file){ e.preventDefault(); }
+  });
+</script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='darkgc-notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='darkgc-enhance.js') }}"></script>
+</body>
+</html>

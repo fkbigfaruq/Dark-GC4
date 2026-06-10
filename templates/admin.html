@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>admin // DARK_GC v2.0</title>
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div>
+        <div class="brand">DARK_GC <span style="color:var(--primary);font-size:10px">v2.0</span></div>
+        <div class="meta">admin panel · @{{ user['username'] }}</div>
+      </div>
+      <div class="actions">
+        <a class="icon-btn" href="{{ url_for('rooms') }}">rooms</a>
+        <a class="icon-btn" href="{{ url_for('videos_index') }}">videos</a>
+        <a class="icon-btn" href="{{ url_for('messages_inbox') }}">dms</a>
+        <a class="icon-btn" href="{{ url_for('logout') }}">exit</a>
+      </div>
+    </div>
+
+    <div class="admin-stats">
+      <div class="stat-card"><div class="stat-n" id="stat-users">{{ users|length }}</div><div class="stat-l">users</div></div>
+      <div class="stat-card"><div class="stat-n" id="stat-online">{{ online|length }}</div><div class="stat-l">online</div></div>
+      <div class="stat-card"><div class="stat-n" id="stat-pending">{{ pending|length }}</div><div class="stat-l">pending</div></div>
+      <div class="stat-card"><div class="stat-n" id="stat-videos">{{ videos|length }}</div><div class="stat-l">videos</div></div>
+    </div>
+
+    <details class="admin-panel" open>
+      <summary>📥 Pending access requests <span class="pill">{{ pending|length }}</span></summary>
+      <div class="panel-body">
+        {% if pending|length == 0 %}<div class="room-desc">No pending requests.</div>{% endif %}
+        {% for p in pending %}
+          <div class="room-card">
+            <div class="room-info">
+              <div class="room-name">@{{ p['username'] }} → {{ p['room_name'] }}</div>
+              <div class="room-desc"><a href="{{ url_for('messages_with', username=p['username']) }}">open chat with @{{ p['username'] }}</a></div>
+            </div>
+            <div class="room-actions">
+              <form method="post" action="{{ url_for('admin_approve', access_id=p['id']) }}" style="display:inline">
+                <button class="btn-primary">approve</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_deny', access_id=p['id']) }}" style="display:inline">
+                <button class="btn-ghost">deny</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </details>
+
+    <details class="admin-panel">
+      <summary>🟢 Online users <span class="pill" id="online-count">{{ online|length }}</span></summary>
+      <div class="panel-body" id="online-list">
+        {% if online|length == 0 %}<div class="room-desc">Nobody is online.</div>{% endif %}
+        {% for o in online %}
+          <div class="room-card">
+            <div class="room-info">
+              <div class="room-name">🟢 @{{ o['username'] }}</div>
+            </div>
+            <div class="room-actions">
+              <a class="btn-ghost" href="{{ url_for('messages_with', username=o['username']) }}">message</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </details>
+
+    <details class="admin-panel">
+      <summary>👥 All users <span class="pill">{{ users|length }}</span></summary>
+      <div class="panel-body">
+        {% for u in users %}
+          <div class="room-card">
+            <div class="room-info">
+              <div class="room-name">@{{ u['username'] }}
+                {% if u['is_admin'] %}<span class="badge ok">admin</span>{% endif %}
+                {% if u['is_banned'] %}<span class="badge denied">banned</span>{% endif %}
+              </div>
+            </div>
+            <div class="room-actions">
+              <a class="btn-ghost" href="{{ url_for('messages_with', username=u['username']) }}">dm</a>
+              {% if u['is_banned'] %}
+                <form method="post" action="{{ url_for('unban', uid=u['id']) }}" style="display:inline">
+                  <button class="btn-primary">unban</button>
+                </form>
+              {% else %}
+                <form method="post" action="{{ url_for('ban', uid=u['id']) }}" style="display:inline">
+                  <button class="btn-danger">ban</button>
+                </form>
+              {% endif %}
+              {% if u['is_admin'] %}
+                <form method="post" action="{{ url_for('demote', uid=u['id']) }}" style="display:inline">
+                  <button class="btn-ghost">demote</button>
+                </form>
+              {% else %}
+                <form method="post" action="{{ url_for('promote', uid=u['id']) }}" style="display:inline">
+                  <button class="btn-ghost">promote</button>
+                </form>
+              {% endif %}
+              {% if u['username'] != ADMIN_USERNAME %}
+                <form method="post" action="{{ url_for('admin_delete_user', uid=u['id']) }}" style="display:inline"
+                      onsubmit="return confirm('PERMANENTLY delete @{{ u['username']|e }} and all their messages? This cannot be undone.')">
+                  <button class="btn-danger">delete</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </details>
+
+    <details class="admin-panel">
+      <summary>💬 Rooms <span class="pill">{{ rooms|length }}</span></summary>
+      <div class="panel-body">
+        <form method="post" action="{{ url_for('admin_add_room') }}" class="add-room">
+          <input name="name" placeholder="room name" maxlength="60" required>
+          <input name="description" placeholder="description (optional)" maxlength="200">
+          <label class="lock-toggle"><input type="checkbox" name="is_locked" value="1"> locked</label>
+          <button class="btn-primary" type="submit">add room</button>
+        </form>
+        {% for r in rooms %}
+          <div class="room-card">
+            <div class="room-info">
+              <div class="room-name">{% if r['is_locked'] %}🔒{% else %}#{% endif %} {{ r['name'] }} <span class="badge">/{{ r['slug'] }}</span></div>
+              <div class="room-desc">{{ r['description'] or '' }}</div>
+            </div>
+            <div class="room-actions">
+              <a class="btn-ghost" href="{{ url_for('chat', slug=r['slug']) }}">open</a>
+              {% if r['id'] != 1 %}
+              <form method="post" action="{{ url_for('admin_delete_room', room_id=r['id']) }}" style="display:inline"
+                    onsubmit="return confirm('Delete room {{ r['name']|e }}?')">
+                <button class="btn-danger">delete</button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </details>
+
+    <details class="admin-panel">
+      <summary>🎬 Videos <span class="pill">{{ videos|length }}</span></summary>
+      <div class="panel-body">
+        <div class="room-card">
+          <div class="room-info">
+            <div class="room-name">Upload a new video</div>
+            <div class="room-desc">Auto-deletes after a few hours. Max 25 MB.</div>
+          </div>
+          <div class="room-actions">
+            <a class="btn-primary" href="{{ url_for('videos_upload') }}">+ upload</a>
+            <a class="btn-ghost" href="{{ url_for('videos_index') }}">browse</a>
+          </div>
+        </div>
+        {% for v in videos %}
+          <div class="room-card">
+            <div class="room-info">
+              <div class="room-name">🎥 {{ v['title'] or 'untitled' }}</div>
+              <div class="room-desc">by @{{ v['uploader'] }} · {{ (v['size_bytes']/1024/1024)|round(2) }} MB · expires <span data-ts="{{ v['expires_at'] }}"></span></div>
+            </div>
+            <div class="room-actions">
+              <a class="btn-ghost" href="{{ url_for('video_detail', vid=v['id']) }}">open</a>
+              <form method="post" action="{{ url_for('video_delete', vid=v['id']) }}" style="display:inline"
+                    onsubmit="return confirm('Delete this video now?')">
+                <button class="btn-danger">delete</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </details>
+  </div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='darkgc-notifications.js') }}"></script>
+<script>
+  // pretty-print "expires" times
+  document.querySelectorAll('[data-ts]').forEach(el=>{
+    const t = parseInt(el.dataset.ts,10);
+    if (!t) return;
+    const d = new Date(t*1000);
+    el.textContent = d.toLocaleString();
+  });
+
+  // live presence
+  const sock = io();
+  sock.on('connect', ()=> sock.emit('admin_watch'));
+  sock.on('presence', (d)=>{
+    document.getElementById('stat-online').textContent = d.online ?? 0;
+    document.getElementById('online-count').textContent = d.online ?? 0;
+    if (d.users) {
+      const box = document.getElementById('online-list');
+      box.innerHTML = '';
+      if (!d.users.length) {
+        box.innerHTML = '<div class="room-desc">Nobody is online.</div>';
+      }
+      d.users.forEach(u=>{
+        const row = document.createElement('div');
+        row.className = 'room-card';
+        row.innerHTML = `<div class="room-info"><div class="room-name">🟢 @${u.username}</div></div>
+          <div class="room-actions"><a class="btn-ghost" href="/messages/${u.username}">message</a></div>`;
+        box.appendChild(row);
+      });
+    }
+  });
+
+  // poll stats every 15s as fallback
+  async function refresh(){
+    try {
+      const r = await fetch('/api/admin/stats').then(r=>r.json());
+      if (r.ok) {
+        document.getElementById('stat-users').textContent = r.users;
+        document.getElementById('stat-online').textContent = r.online;
+        document.getElementById('stat-pending').textContent = r.pending;
+        document.getElementById('stat-videos').textContent = r.videos;
+      }
+    } catch(e){}
+  }
+  setInterval(refresh, 15000);
+</script>
+</body>
+</html>

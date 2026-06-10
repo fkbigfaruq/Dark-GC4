@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ v['title'] or 'video' }} // DARK_GC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div>
+        <div class="brand">DARK_GC</div>
+        <div class="meta">video · {{ v['title'] or 'untitled' }}</div>
+      </div>
+      <div class="actions">
+        <a class="icon-btn" href="{{ url_for('videos_index') }}">videos</a>
+        <a class="icon-btn" href="{{ url_for('rooms') }}">rooms</a>
+      </div>
+    </div>
+
+    <div class="video-detail">
+      <video controls playsinline preload="metadata" src="{{ url_for('video_file', vid=v['id']) }}"></video>
+      <div class="video-info">
+        <h2>{{ v['title'] or 'untitled' }}</h2>
+        <div class="room-desc">uploaded by @{{ v['uploader'] }} · {{ (v['size_bytes']/1024/1024)|round(2) }} MB · ⏳ expires <span data-ts="{{ v['expires_at'] }}"></span></div>
+
+        <div class="reactions">
+          <form method="post" action="{{ url_for('video_react', vid=v['id']) }}" style="display:inline">
+            <input type="hidden" name="kind" value="like">
+            <button class="btn-ghost {% if my_react=='like' %}active-like{% endif %}">👍 {{ likes }}</button>
+          </form>
+          <form method="post" action="{{ url_for('video_react', vid=v['id']) }}" style="display:inline">
+            <input type="hidden" name="kind" value="dislike">
+            <button class="btn-ghost {% if my_react=='dislike' %}active-dislike{% endif %}">👎 {{ dislikes }}</button>
+          </form>
+          <a class="btn-primary" href="{{ url_for('video_file', vid=v['id']) }}" download>⬇ download</a>
+          {% if user['is_admin'] %}
+            <form method="post" action="{{ url_for('video_delete', vid=v['id']) }}" style="display:inline"
+                  onsubmit="return confirm('Delete this video?')">
+              <button class="btn-danger">delete</button>
+            </form>
+          {% endif %}
+        </div>
+
+        <h3 style="margin-top:18px">💬 comments ({{ comments|length }})</h3>
+        <div class="comments">
+          {% for c in comments %}
+            <div class="comment">
+              <div class="name {% if c['is_admin'] %}admin-name{% endif %}">@{{ c['username'] }}</div>
+              <div class="bubble">{{ c['content'] }}</div>
+              <div class="time" data-ts="{{ c['created_at'] }}"></div>
+            </div>
+          {% endfor %}
+        </div>
+        <form method="post" action="{{ url_for('video_comment', vid=v['id']) }}" class="composer" style="margin-top:10px">
+          <input name="content" placeholder="add a comment…" maxlength="1000" required>
+          <button class="btn-primary" type="submit">post</button>
+        </form>
+      </div>
+    </div>
+  </div>
+<script>
+  document.querySelectorAll('[data-ts]').forEach(el=>{
+    const t=parseInt(el.dataset.ts,10);
+    if(!t)return;
+    el.textContent = new Date(t*1000).toLocaleString();
+  });
+</script>
+</body>
+</html>

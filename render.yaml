@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: dark-gc
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: BOT_ENABLED
+        value: "1"
+      - key: BOT_DEFAULT_ROOM_PRICE
+        value: "500"
+      - key: BOT_ROOM_PRICES
+        value: '{"default":500}'
+      - key: BOT_CURRENCY
+        value: "₦"

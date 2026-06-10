@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>videos // DARK_GC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div>
+        <div class="brand">DARK_GC</div>
+        <div class="meta">videos · temporary uploads</div>
+      </div>
+      <div class="actions">
+        <a class="icon-btn" href="{{ url_for('rooms') }}">rooms</a>
+        {% if user['is_admin'] %}<a class="icon-btn" href="{{ url_for('videos_upload') }}">+ upload</a>{% endif %}
+        <a class="icon-btn" href="{{ url_for('logout') }}">exit</a>
+      </div>
+    </div>
+
+    <div class="videos-grid">
+      {% if videos|length == 0 %}
+        <div class="room-desc" style="padding:20px">No videos yet. {% if user['is_admin'] %}<a href="{{ url_for('videos_upload') }}">Upload one</a>.{% endif %}</div>
+      {% endif %}
+      {% for v in videos %}
+        <a class="video-card" href="{{ url_for('video_detail', vid=v['id']) }}">
+          <div class="video-thumb">🎬</div>
+          <div class="video-meta">
+            <div class="video-title">{{ v['title'] or 'untitled' }}</div>
+            <div class="video-sub">@{{ v['uploader'] }} · {{ (v['size_bytes']/1024/1024)|round(2) }} MB</div>
+            <div class="video-sub">👍 {{ v['likes'] }} · 👎 {{ v['dislikes'] }} · 💬 {{ v['comments'] }}</div>
+            <div class="video-sub">⏳ expires <span data-ts="{{ v['expires_at'] }}"></span></div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+<script>
+  document.querySelectorAll('[data-ts]').forEach(el=>{
+    const t=parseInt(el.dataset.ts,10);
+    if(!t)return;
+    const left=t-Math.floor(Date.now()/1000);
+    if (left<=0){el.textContent='soon';return;}
+    const h=Math.floor(left/3600), m=Math.floor((left%3600)/60);
+    el.textContent = (h?h+'h ':'')+m+'m';
+  });
+</script>
+</body>
+</html>
