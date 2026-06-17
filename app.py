@@ -759,10 +759,10 @@ def signup():
             error = "Username too short (min 3)"
         elif len(password) < 6:
             error = "Password too short (min 4)"
-        elif len(username) > 6:
-            error = "please your username should not exit 6 chars"
-        elif len(password) > 15:
-            error = "🛑 your password should not exit 15 chars"
+        elif len(username) > 11:
+            error = "please your username should not exit 11 chars"
+        elif len(password) > 25:
+            error = "🛑 your password should not exit 25 chars"
         else:
             try:
                 with db() as conn:
